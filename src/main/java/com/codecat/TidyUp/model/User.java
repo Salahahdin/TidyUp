@@ -21,6 +21,6 @@ public class User {
     private Date userCreatedAt;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Task> tasks; // Nazwa pola tasks w kodzie Javy
+    private List<Task> tasks;
 
 }
