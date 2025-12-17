@@ -3,8 +3,8 @@ package com.codecat.TidyUp.repository;
 import com.codecat.TidyUp.model.Task;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public class TaskRepository {
-    public interface TaskRepo extends JpaRepository<Task, Long> {
+
+public interface TaskRepository extends JpaRepository<Task, Long> {
     }
-}
