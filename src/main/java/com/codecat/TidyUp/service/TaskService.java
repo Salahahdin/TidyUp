@@ -8,6 +8,8 @@ import com.codecat.TidyUp.service.UserService;
 
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class TaskService {
     private final TaskRepository taskRepository;
@@ -32,6 +34,9 @@ public class TaskService {
         Task task = taskRepository.findById(task_id).orElseThrow(()-> new RuntimeException("Task not found!"));
         taskRepository.delete(task);
         return task;
+    }
+    public List<Task> getTasksByUserId(Long userId) {
+        return taskRepository.findByUserId(userId);
     }
 
 }
