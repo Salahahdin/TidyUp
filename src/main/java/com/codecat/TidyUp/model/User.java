@@ -16,7 +16,7 @@ public class User {
     private Long user_id;
 
     private String username;
-    private String email;
+    //private String email;
     private String password;
     private Date userCreatedAt;
 
