@@ -18,6 +18,8 @@ public class UserService {
     }
     public User createUser (User user){
         String encodedPassword = passwordEncoder.encode(user.getPassword());
+        String username = user.getUsername();
+        user.setUsername(username);
         user.setPassword(encodedPassword);
         return userRepository.save(user);
     }
