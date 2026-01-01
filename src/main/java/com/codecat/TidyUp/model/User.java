@@ -8,12 +8,14 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
-    private Long user_id;
+    @Column(name = "user_id")
+    private Long id;
 
     private String username;
     //private String email;
