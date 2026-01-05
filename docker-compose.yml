@@ -1,17 +1,16 @@
-version: "3.9"
-
+version: '3.8'
 services:
   postgres:
     image: postgres:16
-    container_name: postgres-local
+    container_name: tidyup-postgres
     environment:
-      POSTGRES_DB: POSTGRES_DB
-      POSTGRES_USER: POSTGRES_USER
-      POSTGRES_PASSWORD: POSTGRES_PASSWORD
+      POSTGRES_DB: tidyup
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  pgdata:
+  postgres_data:
