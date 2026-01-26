@@ -19,6 +19,6 @@ public class TaskViewController {
     public String listUserTasks(@PathVariable Long userId, Model model) {
         model.addAttribute("tasks", taskService.getTasksByUserId(userId));
         model.addAttribute("userId", userId);
-        return "tasks";
+        return "tasks.html";
     }
 }
