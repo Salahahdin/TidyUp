@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -18,6 +19,7 @@ import org.springframework.security.web.util.matcher.*;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 
 import java.util.List;
 
@@ -31,30 +33,25 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-        //provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
-        return provider;
-    }
-
-    @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationProvider authenticationProvider) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authenticationProvider(authenticationProvider)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(new AndPathRequestMatcher("/api/auth/**")).permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                        .anyRequest().authenticated()
+                )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable);
+
         return http.build();
     }
 
@@ -63,7 +60,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
