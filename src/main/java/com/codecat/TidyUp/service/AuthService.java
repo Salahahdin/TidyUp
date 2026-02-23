@@ -55,14 +55,13 @@ public class AuthService {
         return toResponse(saved);
     }
 
-    public AuthUserResponse login(LoginRequest request, HttpServletRequest httpRequest) {
+    public AuthUserResponse login(LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password()));
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
-        httpRequest.getSession(true).setAttribute(SPRING_SECURITY_CONTEXT_KEY, context);
 
         User user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
@@ -76,11 +75,6 @@ public class AuthService {
 
         return userRepository.findByUsername(authentication.getName())
                 .map(this::toResponse);
-    }
-
-    public void logout(HttpServletRequest request, HttpServletResponse response) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        new SecurityContextLogoutHandler().logout(request, response, authentication);
     }
 
     private AuthUserResponse toResponse(User user) {
