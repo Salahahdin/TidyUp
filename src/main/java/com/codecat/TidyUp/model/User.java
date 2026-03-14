@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 public class User {
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "user_id")
     private Long id;
 
@@ -22,8 +23,16 @@ public class User {
     //private String email;
     @Column(nullable = false)
     private String password;
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date userCreatedAt;
+
+    @Column(nullable = false, updatable = false)
+    private Instant userCreatedAt;
+
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String active;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -32,10 +41,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Task> tasks;
 
-    @PrePersist
     void onCreate() {
         if (userCreatedAt == null) {
-            userCreatedAt = new Date();
+            userCreatedAt = Instant.now();
         }
         if (role == null) {
             role = Role.USER;

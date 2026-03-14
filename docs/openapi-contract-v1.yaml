@@ -1,0 +1,631 @@
+openapi: 3.0.3
+info:
+  title: TidyUp API Contract
+  version: 1.0.0
+  description: |
+    Contract-first API specification for TidyUp frontend/backend alignment.
+    Scope: auth, current user, admin users, tasks.
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Auth
+  - name: CurrentUser
+  - name: AdminUsers
+  - name: Tasks
+
+paths:
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in user and create authenticated session
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '423':
+          description: Account is inactive/locked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out currently authenticated user
+      operationId: logout
+      security:
+        - sessionCookie: []
+      responses:
+        '204':
+          description: Logout successful
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current authenticated user profile
+      operationId: getAuthMe
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/users/me:
+    put:
+      tags: [CurrentUser]
+      summary: Update current user profile
+      operationId: updateCurrentUser
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCurrentUserRequest'
+      responses:
+        '200':
+          description: User profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Email already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/admin/users:
+    get:
+      tags: [AdminUsers]
+      summary: List users for admin panel
+      operationId: listUsersForAdmin
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paged users list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/admin/users/{id}:
+    patch:
+      tags: [AdminUsers]
+      summary: Update selected user role and/or active status
+      operationId: patchAdminUser
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminUserPatchRequest'
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict while updating user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/tasks:
+    get:
+      tags: [Tasks]
+      summary: List tasks for current user
+      operationId: getTasks
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: query
+          name: done
+          required: false
+          schema:
+            type: boolean
+        - in: query
+          name: priority
+          required: false
+          schema:
+            $ref: '#/components/schemas/TaskPriority'
+        - in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+            enum: [dueDate, createdAt, updatedAt]
+        - in: query
+          name: order
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Tasks list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags: [Tasks]
+      summary: Create a new task
+      operationId: createTask
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/tasks/{id}:
+    put:
+      tags: [Tasks]
+      summary: Replace full task state
+      operationId: updateTask
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags: [Tasks]
+      summary: Delete task
+      operationId: deleteTask
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Task deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/tasks/{id}/done:
+    patch:
+      tags: [Tasks]
+      summary: Toggle task completion state
+      operationId: patchTaskDone
+      security:
+        - sessionCookie: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchTaskDoneRequest'
+      responses:
+        '200':
+          description: Task completion updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID
+
+  responses:
+    BadRequest:
+      description: Validation or malformed request error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required or invalid session
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Authenticated but missing required role/ownership
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    UserRole:
+      type: string
+      enum: [USER, ADMIN]
+
+    TaskPriority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH]
+
+    User:
+      type: object
+      required: [id, username, email, role, active, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/UserRole'
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    LoginRequest:
+      type: object
+      required: [usernameOrEmail, password]
+      properties:
+        usernameOrEmail:
+          type: string
+          minLength: 3
+        password:
+          type: string
+          minLength: 6
+
+    LoginResponse:
+      type: object
+      required: [user]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+
+    UpdateCurrentUserRequest:
+      type: object
+      required: [email]
+      properties:
+        name:
+          type: string
+          nullable: true
+          maxLength: 100
+        email:
+          type: string
+          format: email
+
+    UserSummary:
+      type: object
+      required: [id, username, email, role, active, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+          nullable: true
+        role:
+          $ref: '#/components/schemas/UserRole'
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UserListResponse:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+
+    AdminUserPatchRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/UserRole'
+        active:
+          type: boolean
+      additionalProperties: false
+      minProperties: 1
+
+    Task:
+      type: object
+      required: [id, title, done, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        done:
+          type: boolean
+        priority:
+          allOf:
+            - $ref: '#/components/schemas/TaskPriority'
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          maxLength: 200
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateTaskRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        priority:
+          allOf:
+            - $ref: '#/components/schemas/TaskPriority'
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          maxLength: 200
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+
+    UpdateTaskRequest:
+      type: object
+      required: [title, done]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        done:
+          type: boolean
+        priority:
+          allOf:
+            - $ref: '#/components/schemas/TaskPriority'
+          nullable: true
+        location:
+          type: string
+          nullable: true
+          maxLength: 200
+        dueDate:
+          type: string
+          format: date
+          nullable: true
+
+    PatchTaskDoneRequest:
+      type: object
+      required: [done]
+      properties:
+        done:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true
