@@ -25,7 +25,8 @@ public class Task {
     private Date dueDate;
     private String priority;
     private String title;
-    private String tags;
+    private String location;
+    //private String tags;
     private Date updatedAt;
 
 
