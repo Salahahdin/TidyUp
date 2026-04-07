@@ -22,9 +22,13 @@ public class AuthController {
         this.authService = authService;
     }
 
+
     @PostMapping("/login")
-    public ResponseEntity<AuthUserResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        AuthUserResponse user = authService.login(loginRequest);
+    public ResponseEntity<AuthUserResponse> login(
+            @Valid @RequestBody LoginRequest loginRequest,
+            HttpServletRequest request
+    ) {
+        AuthUserResponse user = authService.login(loginRequest, request);
         return ResponseEntity.ok(user);
     }
 
