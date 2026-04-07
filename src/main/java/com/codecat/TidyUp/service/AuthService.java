@@ -20,7 +20,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.Optional;
 
 import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
@@ -50,7 +50,7 @@ public class AuthService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(Optional.ofNullable(request.role()).orElse(Role.USER));
-        user.setUserCreatedAt(new Date());
+        user.setUserCreatedAt(Instant.now());
         User saved = userRepository.save(user);
         return toResponse(saved);
     }
@@ -68,6 +68,14 @@ public class AuthService {
         return toResponse(user);
     }
 
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
+            SecurityContextHolder.clearContext();
+        }
+    }
+
     public Optional<AuthUserResponse> me(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated() || authentication instanceof AnonymousAuthenticationToken) {
             return Optional.empty();
@@ -78,6 +86,6 @@ public class AuthService {
     }
 
     private AuthUserResponse toResponse(User user) {
-        return new AuthUserResponse(user.getId(), user.getUsername(), user.getRole());
+        return new AuthUserResponse(user.getId(), user.getUsername(), user.getRole(), user.getEmail(), Boolean.parseBoolean(user.getActive()), user.getUserCreatedAt());
     }
 }
